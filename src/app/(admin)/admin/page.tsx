@@ -13,7 +13,7 @@ export default async function AdminDashboardPage() {
 
   // Products
   const { count: products } = await supabase
-    .from("ecommerce_products_rows")
+    .from("ecommerce_products")
     .select("*", {
       count: "exact",
       head: true,
@@ -21,7 +21,7 @@ export default async function AdminDashboardPage() {
 
   // Orders
   const { count: orders } = await supabase
-    .from("ecommerce_orders_rows")
+    .from("ecommerce_orders")
     .select("*", {
       count: "exact",
       head: true,
@@ -29,7 +29,7 @@ export default async function AdminDashboardPage() {
 
   // Customers (unique email từ orders)
   const { data: customerRows } = await supabase
-    .from("ecommerce_orders_rows")
+    .from("ecommerce_orders")
     .select("customer_email");
 
   const customers =
@@ -39,7 +39,7 @@ export default async function AdminDashboardPage() {
 
   // Revenue
   const { data: revenueRows } = await supabase
-    .from("ecommerce_orders_rows")
+    .from("ecommerce_orders")
     .select("total");
 
   const revenue =
@@ -50,7 +50,7 @@ export default async function AdminDashboardPage() {
 
   // Recent Orders
   const { data: recentOrders } = await supabase
-    .from("ecommerce_orders_rows")
+    .from("ecommerce_orders")
     .select("*")
     .order("created_at", {
       ascending: false,
