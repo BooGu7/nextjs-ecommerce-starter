@@ -1,14 +1,60 @@
 "use client"
 
 import Link from "next/link"
-import { LayoutDashboard, Package, Users } from "lucide-react"
+import {
+  LayoutDashboard,
+  ShoppingBag,
+  Package,
+  Users,
+  Tags,
+  FolderTree,
+  FileText,
+  Files,
+} from "lucide-react";
 import { useAuthGuard } from "@/hooks/use-auth-guard"
 
 const adminNav = [
-  { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
-  { name: "Orders", href: "/admin/orders", icon: Package },
-  { name: "Customers", href: "/admin/customers", icon: Users },
-]
+  {
+    name: "Dashboard",
+    href: "/admin",
+    icon: LayoutDashboard,
+  },
+  {
+    name: "Products",
+    href: "/admin/products",
+    icon: ShoppingBag,
+  },
+  {
+    name: "Brands",
+    href: "/admin/brands",
+    icon: Tags,
+  },
+  {
+    name: "Categories",
+    href: "/admin/categories",
+    icon: FolderTree,
+  },
+  {
+    name: "Orders",
+    href: "/admin/orders",
+    icon: Package,
+  },
+  {
+    name: "Customers",
+    href: "/admin/customers",
+    icon: Users,
+  },
+  {
+    name: "Blog",
+    href: "/admin/blog",
+    icon: FileText,
+  },
+  {
+    name: "Pages",
+    href: "/admin/pages",
+    icon: Files,
+  }
+];
 
 export default function AdminLayout({
   children,

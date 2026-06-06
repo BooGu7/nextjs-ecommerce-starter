@@ -1,64 +1,49 @@
-import { createClient } from "@supabase/supabase-js"
-
-const defaultSupabaseUrl = "https://amukhgkamrokbbcjgusf.supabase.co"
-const defaultSupabasePublishableKey =
-  "sb_publishable_n7U664J9No0uwIXuUrAgYQ_Q4JEipC6"
-
-export function hasSupabaseConfig() {
-  return Boolean(
-    getSupabaseUrl() &&
-    getSupabaseServiceRoleKey()
-  )
-}
-
-function getSupabaseUrl() {
-  return process.env.NEXT_PUBLIC_SUPABASE_URL ?? defaultSupabaseUrl
-}
-
-function getSupabasePublishableKey() {
-  return (
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ??
-    defaultSupabasePublishableKey
-  )
-}
-
-function getSupabaseServiceRoleKey() {
-  return process.env.SUPABASE_SERVICE_ROLE_KEY
-}
+import { createClient } from "@supabase/supabase-js";
+import { cookies } from "next/headers";
 
 /**
- * Dùng cho API routes / server actions
+ * =========================
+ * SUPABASE SERVER CLIENT
+ * =========================
  */
 export function createSupabaseServerClient() {
-  const url = getSupabaseUrl()
-  const key = getSupabaseServiceRoleKey()
+  const cookieStore = cookies();
 
-  if (!url || !key) {
-    throw new Error(
-      "SUPABASE_SERVICE_ROLE_KEY is not configured"
-    )
-  }
-
-  return createClient(url, key, {
-    auth: {
-      persistSession: false,
-      autoRefreshToken: false,
-    },
-  })
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      auth: {
+        persistSession: false,
+      },
+      global: {
+        headers: {
+          Cookie: cookieStore.toString(),
+        },
+      },
+    }
+  );
 }
 
 /**
- * Dùng cho frontend nếu cần
+ * =========================
+ * SUPABASE ADMIN CLIENT
+ * =========================
+ * ⚠️ chỉ dùng trong API / server logic
  */
-export function createSupabaseBrowserClient() {
-  const url = getSupabaseUrl()
-  const key = getSupabasePublishableKey()
+export const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
 
-  if (!url || !key) {
-    throw new Error(
-      "Supabase publishable key is not configured"
-    )
-  }
-
-  return createClient(url, key)
+/**
+ * =========================
+ * CONFIG CHECK (FIX BUILD ERROR)
+ * =========================
+ */
+export function hasSupabaseConfig() {
+  return Boolean(
+    process.env.NEXT_PUBLIC_SUPABASE_URL &&
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  );
 }
