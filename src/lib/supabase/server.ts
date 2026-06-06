@@ -2,12 +2,18 @@ import { createClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
 
 /**
- * =========================
- * SUPABASE SERVER CLIENT
- * =========================
+ * Server client
  */
 export function createSupabaseServerClient() {
-  const cookieStore = cookies();
+  let cookieHeader = "";
+
+  try {
+    // Next build sẽ throw nếu không có request context
+    const cookieStore = cookies() as any;
+    cookieHeader = cookieStore?.toString?.() ?? "";
+  } catch {
+    cookieHeader = "";
+  }
 
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -18,7 +24,7 @@ export function createSupabaseServerClient() {
       },
       global: {
         headers: {
-          Cookie: cookieStore.toString(),
+          Cookie: cookieHeader,
         },
       },
     }
@@ -26,10 +32,7 @@ export function createSupabaseServerClient() {
 }
 
 /**
- * =========================
- * SUPABASE ADMIN CLIENT
- * =========================
- * ⚠️ chỉ dùng trong API / server logic
+ * Admin client
  */
 export const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -37,9 +40,7 @@ export const supabaseAdmin = createClient(
 );
 
 /**
- * =========================
- * CONFIG CHECK (FIX BUILD ERROR)
- * =========================
+ * Config checker
  */
 export function hasSupabaseConfig() {
   return Boolean(
