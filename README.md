@@ -1,4 +1,4 @@
-# Next.js Ecommerce Starter
+# Next.js Ecommerce Starter1
 
 A free, open-source, production-ready ecommerce starter template built with **Next.js**, **Tailwind CSS**, and **shadcn/ui**. Designed to work standalone or connect to any checkout/payment system.
 
