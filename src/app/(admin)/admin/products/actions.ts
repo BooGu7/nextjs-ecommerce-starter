@@ -1,10 +1,13 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getSupabaseAdmin } from "@/lib/supabase/admin";
 
+/**
+ * DELETE PRODUCT
+ */
 export async function deleteProduct(id: string) {
-  const supabase = createSupabaseServerClient();
+  const supabase = getSupabaseAdmin();
 
   const { error } = await supabase
     .from("ecommerce_products")
@@ -12,14 +15,18 @@ export async function deleteProduct(id: string) {
     .eq("id", id);
 
   if (error) {
+    console.error("DELETE ERROR:", error);
     throw new Error(error.message);
   }
 
   revalidatePath("/admin/products");
 }
 
+/**
+ * CREATE PRODUCT
+ */
 export async function createProduct(formData: FormData) {
-  const supabase = createSupabaseServerClient();
+  const supabase = getSupabaseAdmin();
 
   const name = formData.get("name") as string;
   const slug = formData.get("slug") as string;
@@ -58,39 +65,44 @@ export async function createProduct(formData: FormData) {
     ],
   };
 
-  const { error } = await supabase
-    .from("ecommerce_products")
-    .insert({
-      id,
-      slug,
-      status: "active",
-      sort_order: 0,
-      data,
-    });
+  const { error } = await supabase.from("ecommerce_products").insert({
+    id,
+    slug,
+    status: "active",
+    sort_order: 0,
+    data,
+  });
 
   if (error) {
+    console.error("CREATE ERROR:", error);
     throw new Error(error.message);
   }
 
   revalidatePath("/admin/products");
 }
 
-export async function updateProduct(
-  id: string,
-  formData: FormData
-) {
-  const supabase = createSupabaseServerClient();
+/**
+ * UPDATE PRODUCT
+ */
+export async function updateProduct(id: string, formData: FormData) {
+  const supabase = getSupabaseAdmin();
 
   const name = formData.get("name") as string;
   const slug = formData.get("slug") as string;
   const price = Number(formData.get("price"));
   const inventory = Number(formData.get("inventory"));
 
-  const { data: product } = await supabase
+  // lấy product hiện tại
+  const { data: product, error: fetchError } = await supabase
     .from("ecommerce_products")
     .select("*")
     .eq("id", id)
     .single();
+
+  if (fetchError) {
+    console.error("FETCH ERROR:", fetchError);
+    throw new Error(fetchError.message);
+  }
 
   const json = product?.data || {};
 
@@ -99,8 +111,12 @@ export async function updateProduct(
 
   if (json.variants?.[0]) {
     json.variants[0].price = price;
-    json.variants[0].inventory.quantity =
-      inventory;
+
+    if (!json.variants[0].inventory) {
+      json.variants[0].inventory = { quantity: 0 };
+    }
+
+    json.variants[0].inventory.quantity = inventory;
   }
 
   const { error } = await supabase
@@ -113,6 +129,7 @@ export async function updateProduct(
     .eq("id", id);
 
   if (error) {
+    console.error("UPDATE ERROR:", error);
     throw new Error(error.message);
   }
 
