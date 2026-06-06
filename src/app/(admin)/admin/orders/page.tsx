@@ -1,15 +1,15 @@
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { PageHeader } from "@/components/ui/page-header";
 
+export const dynamic = "force-dynamic";
+
 export default async function AdminOrdersPage() {
-  const supabase = createSupabaseServerClient();
+  const supabase = getSupabaseAdmin();
 
   const { data: orders, error } = await supabase
     .from("ecommerce_orders")
     .select("*")
-    .order("created_at", {
-      ascending: false,
-    });
+    .order("created_at", { ascending: false });
 
   if (error) {
     return (
@@ -44,11 +44,8 @@ export default async function AdminOrdersPage() {
             </thead>
 
             <tbody>
-              {orders.map((order) => (
-                <tr
-                  key={order.id}
-                  className="border-b"
-                >
+              {orders?.map((order: any) => (
+                <tr key={order.id} className="border-b">
                   <td className="p-3">
                     {order.order_number}
                   </td>

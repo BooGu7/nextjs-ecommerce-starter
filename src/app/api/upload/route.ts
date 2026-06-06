@@ -1,37 +1,29 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
-import { v4 as uuid } from "uuid";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { getSupabaseAdmin } from "@/lib/supabase/admin";
 
 export async function POST(req: Request) {
   try {
     const formData = await req.formData();
-
     const file = formData.get("file") as File;
 
     if (!file) {
       return NextResponse.json(
-        { error: "No file" },
+        { error: "No file uploaded" },
         { status: 400 }
       );
     }
 
-    const ext = file.name.split(".").pop();
+    const supabase = getSupabaseAdmin();
 
-    const filename = `${uuid()}.${ext}`;
+    const filename = `uploads/${Date.now()}-${file.name}`;
 
-    const buffer = Buffer.from(
-      await file.arrayBuffer()
-    );
+    const buffer = new Uint8Array(await file.arrayBuffer());
 
     const { error } = await supabase.storage
       .from("media")
       .upload(filename, buffer, {
         contentType: file.type,
+        upsert: false,
       });
 
     if (error) throw error;
@@ -43,11 +35,16 @@ export async function POST(req: Request) {
     return NextResponse.json({
       url: data.publicUrl,
     });
-  } catch (err) {
-    console.error(err);
+  } catch (error) {
+    console.error(error);
 
     return NextResponse.json(
-      { error: "Upload failed" },
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : "Upload failed",
+      },
       { status: 500 }
     );
   }

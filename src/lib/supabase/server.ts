@@ -2,49 +2,28 @@ import { createClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
 
 /**
- * Server client
+ * Server client (SSR safe)
  */
 export function createSupabaseServerClient() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+
+  if (!url || !key) {
+    throw new Error("Missing Supabase public env");
+  }
+
   let cookieHeader = "";
 
   try {
-    // Next build sẽ throw nếu không có request context
-    const cookieStore = cookies() as any;
-    cookieHeader = cookieStore?.toString?.() ?? "";
-  } catch {
-    cookieHeader = "";
-  }
+    cookieHeader = cookies().toString();
+  } catch {}
 
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      auth: {
-        persistSession: false,
+  return createClient(url, key, {
+    auth: { persistSession: false },
+    global: {
+      headers: {
+        Cookie: cookieHeader,
       },
-      global: {
-        headers: {
-          Cookie: cookieHeader,
-        },
-      },
-    }
-  );
-}
-
-/**
- * Admin client
- */
-export const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
-
-/**
- * Config checker
- */
-export function hasSupabaseConfig() {
-  return Boolean(
-    process.env.NEXT_PUBLIC_SUPABASE_URL &&
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-  );
+    },
+  });
 }

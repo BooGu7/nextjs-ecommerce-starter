@@ -1,18 +1,20 @@
 import { NextResponse } from "next/server";
-import { supabaseAdmin } from "@/lib/supabase/server";
+import { getSupabaseAdmin } from "@/lib/supabase/admin";
 
-export async function GET(
-  req: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const { id } = await params;
+type Context = {
+  params: Promise<{ id: string }>;
+};
 
-  const { data, error } =
-    await supabaseAdmin
-      .from("posts")
-      .select("*")
-      .eq("id", id)
-      .single();
+export async function GET(req: Request, context: Context) {
+  const { id } = await context.params;
+
+  const supabase = getSupabaseAdmin();
+
+  const { data, error } = await supabase
+    .from("posts")
+    .select("*")
+    .eq("id", id)
+    .single();
 
   if (error) {
     return NextResponse.json(
@@ -24,83 +26,60 @@ export async function GET(
   return NextResponse.json(data);
 }
 
-export async function PUT(
-  req: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const { id } = await params;
+export async function PUT(req: Request, context: Context) {
+  const { id } = await context.params;
 
-    const body = await req.json();
+  const body = await req.json();
 
-    const {
-      title,
-      excerpt,
-      content,
-      featured_image,
-      status,
-    } = body;
+  const supabase = getSupabaseAdmin();
 
-    const slug = title
-      .toLowerCase()
-      .trim()
-      .replace(/\s+/g, "-")
-      .replace(/[^a-z0-9-]/g, "");
+  const slug = body.title
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, "-")
+    .replace(/[^a-z0-9-]/g, "");
 
-    const { data, error } =
-      await supabaseAdmin
-        .from("posts")
-        .update({
-          title,
-          excerpt,
-          content,
-          featured_image,
-          slug,
-          status,
-          updated_at:
-            new Date().toISOString(),
-        })
-        .eq("id", id)
-        .select()
-        .single();
-
-    if (error) throw error;
-
-    return NextResponse.json(data);
-  } catch (error) {
-    console.error(error);
-
-    return NextResponse.json(
-      {
-        error: "Update failed",
-      },
-      {
-        status: 500,
-      }
-    );
-  }
-}
-export async function DELETE(
-  req: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
-
-  const { id } = await params;
-
-  const { error } =
-    await supabaseAdmin
-      .from("posts")
-      .delete()
-      .eq("id", id);
+  const { data, error } = await supabase
+    .from("posts")
+    .update({
+      title: body.title,
+      excerpt: body.excerpt,
+      content: body.content,
+      featured_image: body.featured_image,
+      status: body.status,
+      slug,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", id)
+    .select()
+    .single();
 
   if (error) {
     return NextResponse.json(
-      error,
+      { error: error.message },
       { status: 500 }
     );
   }
 
-  return NextResponse.json({
-    success: true,
-  });
+  return NextResponse.json(data);
+}
+
+export async function DELETE(req: Request, context: Context) {
+  const { id } = await context.params;
+
+  const supabase = getSupabaseAdmin();
+
+  const { error } = await supabase
+    .from("posts")
+    .delete()
+    .eq("id", id);
+
+  if (error) {
+    return NextResponse.json(
+      { error: error.message },
+      { status: 500 }
+    );
+  }
+
+  return NextResponse.json({ success: true });
 }

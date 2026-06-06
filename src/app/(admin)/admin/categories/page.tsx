@@ -1,6 +1,5 @@
 import Link from "next/link";
-
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getSupabaseAdmin } from "@/lib/supabase/admin";
 
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
@@ -16,13 +15,19 @@ import {
 
 import { deleteCategory } from "./actions";
 
-export default async function CategoriesPage() {
-  const supabase = createSupabaseServerClient();
+export const dynamic = "force-dynamic";
 
-  const { data: categories } =
-    await supabase
-      .from("ecommerce_categories")
-      .select("*");
+export default async function CategoriesPage() {
+  const supabase = getSupabaseAdmin();
+
+  const { data: categories, error } = await supabase
+    .from("ecommerce_categories")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    throw new Error(error.message);
+  }
 
   return (
     <div>
@@ -31,9 +36,7 @@ export default async function CategoriesPage() {
         description="Manage categories"
       >
         <Link href="/admin/categories/new">
-          <Button>
-            Add Category
-          </Button>
+          <Button>Add Category</Button>
         </Link>
       </PageHeader>
 
@@ -48,10 +51,10 @@ export default async function CategoriesPage() {
           </TableHeader>
 
           <TableBody>
-            {categories?.map((cat) => (
+            {categories?.map((cat: any) => (
               <TableRow key={cat.id}>
                 <TableCell>
-                  {cat.data?.name}
+                  {cat.name}
                 </TableCell>
 
                 <TableCell>
@@ -62,9 +65,7 @@ export default async function CategoriesPage() {
                   <form
                     action={async () => {
                       "use server";
-                      await deleteCategory(
-                        cat.id
-                      );
+                      await deleteCategory(cat.id);
                     }}
                   >
                     <Button

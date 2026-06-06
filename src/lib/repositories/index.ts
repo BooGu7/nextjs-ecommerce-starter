@@ -1,5 +1,3 @@
-import { hasSupabaseConfig } from "@/lib/supabase/server";
-
 import { jsonProductRepository } from "./json-product-repository";
 import { jsonCategoryRepository } from "./json-category-repository";
 import { jsonBrandRepository } from "./json-brand-repository";
@@ -15,10 +13,16 @@ import {
 } from "./supabase-repositories";
 
 /**
- * SWITCH BACKEND AUTOMATICALLY
+ * SAFE ENV CHECK (NO hasSupabaseConfig)
  */
-const useSupabase = hasSupabaseConfig();
+const useSupabase =
+  !!process.env.NEXT_PUBLIC_SUPABASE_URL &&
+  !!process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
+/**
+ * SWITCH BACKEND AUTOMATICALLY
+ * (SAFE FOR NEXT.JS BUILD)
+ */
 export const productRepository = useSupabase
   ? supabaseProductRepository
   : jsonProductRepository;

@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getSupabaseAdmin } from "@/lib/supabase/admin";
 
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
@@ -16,17 +16,19 @@ import {
 
 import { deletePage } from "./actions";
 
-export default async function PagesPage() {
-  const supabase =
-    createSupabaseServerClient();
+export const dynamic = "force-dynamic";
 
-  const { data: pages } =
-    await supabase
-      .from("ecommerce_pages")
-      .select("*")
-      .order("published_at", {
-        ascending: false,
-      });
+export default async function PagesPage() {
+  const supabase = getSupabaseAdmin();
+
+  const { data: pages, error } = await supabase
+    .from("ecommerce_pages")
+    .select("*")
+    .order("published_at", { ascending: false });
+
+  if (error) {
+    throw new Error(error.message);
+  }
 
   return (
     <div>
@@ -35,9 +37,7 @@ export default async function PagesPage() {
         description="Manage static pages"
       >
         <Link href="/admin/pages/new">
-          <Button>
-            New Page
-          </Button>
+          <Button>New Page</Button>
         </Link>
       </PageHeader>
 
@@ -45,28 +45,17 @@ export default async function PagesPage() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>
-                Title
-              </TableHead>
-
-              <TableHead>
-                Slug
-              </TableHead>
-
+              <TableHead>Title</TableHead>
+              <TableHead>Slug</TableHead>
               <TableHead />
             </TableRow>
           </TableHeader>
 
           <TableBody>
-            {pages?.map((page) => (
-              <TableRow
-                key={page.id}
-              >
+            {pages?.map((page: any) => (
+              <TableRow key={page.id}>
                 <TableCell>
-                  {
-                    page.data
-                      ?.title
-                  }
+                  {page.title}
                 </TableCell>
 
                 <TableCell>
@@ -75,13 +64,8 @@ export default async function PagesPage() {
 
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-2">
-                    <Link
-                      href={`/admin/pages/${page.id}`}
-                    >
-                      <Button
-                        size="sm"
-                        variant="outline"
-                      >
+                    <Link href={`/admin/pages/${page.id}`}>
+                      <Button size="sm" variant="outline">
                         Edit
                       </Button>
                     </Link>
@@ -89,9 +73,7 @@ export default async function PagesPage() {
                     <form
                       action={async () => {
                         "use server";
-                        await deletePage(
-                          page.id
-                        );
+                        await deletePage(page.id);
                       }}
                     >
                       <Button

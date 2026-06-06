@@ -1,24 +1,25 @@
 import { notFound } from "next/navigation";
-import { supabaseAdmin } from "@/lib/supabase/server";
+import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import PostEditForm from "@/components/admin/post-edit-form";
 
 interface PageProps {
-  params: Promise<{
+  params: {
     id: string;
-  }>;
+  };
 }
 
 export default async function EditPostPage({
   params,
 }: PageProps) {
-  const { id } = await params;
+  const { id } = params;
 
-  const { data: post, error } =
-    await supabaseAdmin
-      .from("posts")
-      .select("*")
-      .eq("id", id)
-      .single();
+  const supabase = getSupabaseAdmin();
+
+  const { data: post, error } = await supabase
+    .from("posts")
+    .select("*")
+    .eq("id", id)
+    .single();
 
   if (error || !post) {
     notFound();
@@ -27,9 +28,7 @@ export default async function EditPostPage({
   return (
     <div className="max-w-6xl mx-auto p-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold">
-          Edit Post
-        </h1>
+        <h1 className="text-3xl font-bold">Edit Post</h1>
 
         <p className="text-gray-500 mt-2">
           Update post content

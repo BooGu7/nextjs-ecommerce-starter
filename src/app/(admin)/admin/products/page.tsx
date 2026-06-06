@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getSupabaseAdmin } from "@/lib/supabase/admin";
 
 import { PageHeader } from "@/components/ui/page-header";
 import { Button } from "@/components/ui/button";
@@ -16,15 +16,19 @@ import {
 
 import { deleteProduct } from "./actions";
 
-export default async function ProductsPage() {
-  const supabase = createSupabaseServerClient();
+export const dynamic = "force-dynamic";
 
-  const { data: products } = await supabase
+export default async function ProductsPage() {
+  const supabase = getSupabaseAdmin();
+
+  const { data: products, error } = await supabase
     .from("ecommerce_products")
     .select("*")
-    .order("created_at", {
-      ascending: false,
-    });
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    throw new Error(error.message);
+  }
 
   return (
     <div>
@@ -33,9 +37,7 @@ export default async function ProductsPage() {
         description="Manage store products."
       >
         <Link href="/admin/products/new">
-          <Button>
-            Add Product
-          </Button>
+          <Button>Add Product</Button>
         </Link>
       </PageHeader>
 
@@ -52,13 +54,15 @@ export default async function ProductsPage() {
           </TableHeader>
 
           <TableBody>
-            {products?.map((product) => {
-              const item = product.data;
+            {products?.map((product: any) => {
+              const item = product.data ?? {};
+
+              const variant = item?.variants?.[0];
 
               return (
                 <TableRow key={product.id}>
                   <TableCell>
-                    {item.name}
+                    {item?.name ?? "No name"}
                   </TableCell>
 
                   <TableCell>
@@ -66,23 +70,16 @@ export default async function ProductsPage() {
                   </TableCell>
 
                   <TableCell>
-                    $
-                    {item?.variants?.[0]?.price ??
-                      0}
+                    ${variant?.price ?? 0}
                   </TableCell>
 
                   <TableCell>
-                    {
-                      item?.variants?.[0]
-                        ?.inventory?.quantity
-                    }
+                    {variant?.inventory?.quantity ?? 0}
                   </TableCell>
 
                   <TableCell className="text-right">
                     <div className="flex gap-2 justify-end">
-                      <Link
-                        href={`/admin/products/${product.id}`}
-                      >
+                      <Link href={`/admin/products/${product.id}`}>
                         <Button
                           variant="outline"
                           size="sm"
@@ -94,9 +91,7 @@ export default async function ProductsPage() {
                       <form
                         action={async () => {
                           "use server";
-                          await deleteProduct(
-                            product.id
-                          );
+                          await deleteProduct(product.id);
                         }}
                       >
                         <Button

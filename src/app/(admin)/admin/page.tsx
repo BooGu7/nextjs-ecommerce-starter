@@ -1,6 +1,8 @@
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getSupabaseAdmin } from "@/lib/supabase/admin";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
+
 import {
   DollarSign,
   Package,
@@ -8,54 +10,49 @@ import {
   Users,
 } from "lucide-react";
 
+export const dynamic = "force-dynamic";
+
 export default async function AdminDashboardPage() {
-  const supabase = createSupabaseServerClient();
+  const supabase = getSupabaseAdmin();
 
-  // Products
-  const { count: products } = await supabase
-    .from("ecommerce_products")
-    .select("*", {
-      count: "exact",
-      head: true,
-    });
+  // chạy song song để nhanh hơn
+  const [
+    productsRes,
+    ordersRes,
+    ordersForStats,
+    recentOrdersRes,
+  ] = await Promise.all([
+    supabase
+      .from("ecommerce_products")
+      .select("*", { count: "exact", head: true }),
 
-  // Orders
-  const { count: orders } = await supabase
-    .from("ecommerce_orders")
-    .select("*", {
-      count: "exact",
-      head: true,
-    });
+    supabase
+      .from("ecommerce_orders")
+      .select("*", { count: "exact", head: true }),
 
-  // Customers (unique email từ orders)
-  const { data: customerRows } = await supabase
-    .from("ecommerce_orders")
-    .select("customer_email");
+    supabase
+      .from("ecommerce_orders")
+      .select("customer_email,total"),
 
-  const customers =
-    new Set(
-      customerRows?.map((row) => row.customer_email)
-    ).size;
+    supabase
+      .from("ecommerce_orders")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(10),
+  ]);
 
-  // Revenue
-  const { data: revenueRows } = await supabase
-    .from("ecommerce_orders")
-    .select("total");
+  const products = productsRes.count ?? 0;
+  const orders = ordersRes.count ?? 0;
+
+  const customers = new Set(
+    ordersForStats.data?.map((o) => o.customer_email)
+  ).size;
 
   const revenue =
-    revenueRows?.reduce(
-      (sum, row) => sum + Number(row.total || 0),
+    ordersForStats.data?.reduce(
+      (sum, o) => sum + Number(o.total || 0),
       0
-    ) || 0;
-
-  // Recent Orders
-  const { data: recentOrders } = await supabase
-    .from("ecommerce_orders")
-    .select("*")
-    .order("created_at", {
-      ascending: false,
-    })
-    .limit(10);
+    ) ?? 0;
 
   const stats = [
     {
@@ -65,12 +62,12 @@ export default async function AdminDashboardPage() {
     },
     {
       name: "Orders",
-      value: orders ?? 0,
+      value: orders,
       icon: ShoppingCart,
     },
     {
       name: "Products",
-      value: products ?? 0,
+      value: products,
       icon: Package,
     },
     {
@@ -112,9 +109,9 @@ export default async function AdminDashboardPage() {
         </CardHeader>
 
         <CardContent>
-          {recentOrders && recentOrders.length > 0 ? (
+          {recentOrdersRes.data?.length ? (
             <div className="space-y-3">
-              {recentOrders.map((order) => (
+              {recentOrdersRes.data.map((order: any) => (
                 <div
                   key={order.id}
                   className="flex items-center justify-between border-b pb-2"
@@ -123,7 +120,6 @@ export default async function AdminDashboardPage() {
                     <div className="font-medium">
                       {order.order_number}
                     </div>
-
                     <div className="text-sm text-muted-foreground">
                       {order.customer_email}
                     </div>
@@ -133,7 +129,6 @@ export default async function AdminDashboardPage() {
                     <div>
                       ${Number(order.total).toLocaleString()}
                     </div>
-
                     <div className="text-sm text-muted-foreground">
                       {order.status}
                     </div>

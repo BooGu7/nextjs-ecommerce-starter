@@ -1,6 +1,5 @@
 import Link from "next/link";
-
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getSupabaseAdmin } from "@/lib/supabase/admin";
 
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
@@ -16,13 +15,19 @@ import {
 
 import { deleteBrand } from "./actions";
 
-export default async function BrandsPage() {
-  const supabase = createSupabaseServerClient();
+export const dynamic = "force-dynamic";
 
-  const { data: brands } = await supabase
+export default async function BrandsPage() {
+  const supabase = getSupabaseAdmin();
+
+  const { data: brands, error } = await supabase
     .from("ecommerce_brands")
     .select("*")
-    .order("created_at");
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    throw new Error(error.message);
+  }
 
   return (
     <div>
@@ -46,10 +51,10 @@ export default async function BrandsPage() {
           </TableHeader>
 
           <TableBody>
-            {brands?.map((brand) => (
+            {brands?.map((brand: any) => (
               <TableRow key={brand.id}>
                 <TableCell>
-                  {brand.data?.name}
+                  {brand.name}
                 </TableCell>
 
                 <TableCell>
@@ -60,9 +65,7 @@ export default async function BrandsPage() {
                   <form
                     action={async () => {
                       "use server";
-                      await deleteBrand(
-                        brand.id
-                      );
+                      await deleteBrand(brand.id);
                     }}
                   >
                     <Button

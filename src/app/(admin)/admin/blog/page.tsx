@@ -1,6 +1,5 @@
 import Link from "next/link";
-
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getSupabaseAdmin } from "@/lib/supabase/admin";
 
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
@@ -14,15 +13,19 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-export default async function BlogPage() {
-  const supabase = createSupabaseServerClient();
+export const dynamic = "force-dynamic";
 
-  const { data: posts } = await supabase
+export default async function BlogPage() {
+  const supabase = getSupabaseAdmin();
+
+  const { data: posts, error } = await supabase
     .from("ecommerce_blog_posts")
     .select("*")
-    .order("published_at", {
-      ascending: false,
-    });
+    .order("published_at", { ascending: false });
+
+  if (error) {
+    throw new Error(error.message);
+  }
 
   return (
     <div>
@@ -31,9 +34,7 @@ export default async function BlogPage() {
         description="Manage blog content"
       >
         <Link href="/admin/blog/new">
-          <Button>
-            New Post
-          </Button>
+          <Button>New Post</Button>
         </Link>
       </PageHeader>
 
@@ -48,14 +49,14 @@ export default async function BlogPage() {
           </TableHeader>
 
           <TableBody>
-            {posts?.map((post) => (
+            {posts?.map((post: any) => (
               <TableRow key={post.id}>
                 <TableCell>
-                  {post.data?.title}
+                  {post.title}
                 </TableCell>
 
                 <TableCell>
-                  {post.data?.author}
+                  {post.author}
                 </TableCell>
 
                 <TableCell>

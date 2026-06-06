@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import type { Order } from "@/types";
-import { hasSupabaseConfig } from "@/lib/supabase/server";
 import { createSupabaseOrder } from "@/lib/repositories/supabase-repositories";
 
 export async function POST(request: Request) {
-  if (!hasSupabaseConfig()) {
+  // ✅ FIX: check env trực tiếp (KHÔNG dùng hasSupabaseConfig)
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
     return NextResponse.json(
       { error: "Supabase is not configured" },
       { status: 503 }
